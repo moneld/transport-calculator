@@ -1,6 +1,9 @@
 <template>
-    <div class="container">
-        <form class="mt-5">
+    <div class="container pt-2">
+        <div class="alert alert-danger" role="alert" v-if="error">
+            {{error}}
+        </div>
+        <form class="mt-1" @submit.prevent="handleSubmit">
             <h2 class="text-center">Transport Calculator</h2>
             <div class="mt-2">
                 <label class="form-label" >Expéditeur</label>
@@ -35,14 +38,21 @@
                </div>
            </div>
             <div class="mt-3 d-grid gap-2">
-                <button type="submit" class="btn btn-primary">Calculer</button>
+                <button type="submit" class="btn btn-primary" @click.prevent="handleSubmit">Calculer</button>
             </div>
         </form>
+        <div class="alert alert-success mt-2" role="alert" v-if="result">
+            <p><strong>Expéditeur</strong>: {{result.expediteur}}</p>
+            <p><strong>Destinataire</strong>: {{result.destinataire}}</p>
+            <p><strong>Localité</strong>: {{result.localite}}</p>
+            <p><strong>Montant</strong>: {{result.montant}}</p>
+        </div>
     </div>
 </template>
 
 <script setup>
 import {computed, ref} from "vue";
+import axios from "axios";
 
 const props = defineProps(['clients'])
 const expediteurSelected = ref(null);
@@ -50,11 +60,37 @@ const destinataireSelected = ref(null);
 const nombreColis = ref(null);
 const poidsColis = ref(null);
 const port = ref(null);
+const error = ref(null);
+const result = ref(null);
 const expediteurs = ref(JSON.parse(props.clients))
 
 const destinataires = computed(() => {
     return expediteurs.value.filter(el => el.idClient !== expediteurSelected.value);
 })
+
+const handleSubmit = async () => {
+    if(expediteurSelected.value !== null && destinataireSelected.value !== null
+        && nombreColis.value !== null && poidsColis.value !== null && port.value !== null){
+        const data = {
+            expediteur : expediteurSelected.value,
+            destinataire : destinataireSelected.value,
+            nombre : nombreColis.value,
+            poids : poidsColis.value,
+            port : port.value
+        }
+        const response = await  axios.post("http://localhost:8000/api/calculator",data);
+        result.value = response.data
+
+        expediteurSelected.value = null;
+            destinataireSelected.value = null;
+             nombreColis.value = null;
+             poidsColis.value = null;
+            port.value = null;
+
+    }else{
+        error.value = "Veuillez renseigner tous les champs."
+    }
+}
 </script>
 
 <style scoped>
